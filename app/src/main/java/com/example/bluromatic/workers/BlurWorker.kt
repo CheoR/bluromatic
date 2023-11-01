@@ -30,6 +30,10 @@ class BlurWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
         // By default CoroutineWorker runs as Dispatchers.Default
         // Change dispatcher with withContext()
         return withContext(Dispatchers.IO) {
+
+            // Utility function added to emulate slower work.
+            delay(DELAY_TIME_MILLIS)
+
             // return try {
             // to fix error: return not allowed here
             return@withContext try {
@@ -44,10 +48,6 @@ class BlurWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
 
                 // use ContentResolver object to read contents pointed to by URI
                 val resolver = applicationContext.contentResolver
-
-
-                // Utility function added to emulate slower work.
-                delay(DELAY_TIME_MILLIS)
 
 //                val picture = BitmapFactory.decodeResource(
 //                    applicationContext.resources,

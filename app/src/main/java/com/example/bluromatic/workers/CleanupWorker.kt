@@ -47,6 +47,11 @@ class CleanupWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
                 }
                 Result.success()
             } catch (exception: Exception) {
+                Log.e(
+                    TAG,
+                    applicationContext.resources.getString(R.string.error_cleaning_file),
+                    exception
+                )
                 exception.printStackTrace()
                 Result.failure()
             }
