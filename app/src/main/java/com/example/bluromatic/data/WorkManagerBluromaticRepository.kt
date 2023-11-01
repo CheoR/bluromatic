@@ -3,6 +3,7 @@ package com.example.bluromatic.data
 import android.content.Context
 import android.net.Uri
 import androidx.work.Data
+import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -12,6 +13,10 @@ import com.example.bluromatic.getImageUri
 import com.example.bluromatic.workers.BlurWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+
+
+import com.example.bluromatic.workers.CleanupWorker
+import com.example.bluromatic.workers.SaveImageToFileWorker
 
 class WorkManagerBluromaticRepository(context: Context) : BluromaticRepository {
 
@@ -24,14 +29,37 @@ class WorkManagerBluromaticRepository(context: Context) : BluromaticRepository {
      * @param blurLevel amount to blur image
      */
     override fun applyBlur(blurLevel: Int) {
+
+        // WorkRequest to Cleanup temporary images
+        // beginWith() returns WorkContinuation object and creates starting point for chain of
+        // WorkRequest`s with first work request in chain.
+        // Note alternate way to create OneTimeWorkRequest object.
+        // Calling OneTimeWorkRequest.from(CleanupWorker::class.java) is equivalent to calling
+        // OneTimeWorkRequestBuilder<CleanupWorker>().build().
+        // OneTimeWorkRequest class comes from AndroidX Work library while
+        // OneTimeWorkRequestBuilder is helper function provided by WorkManager KTX extension.
+        var continuation = workManager.beginWith(OneTimeWorkRequest.from(CleanupWorker::class.java))
+
         // Create WorkRequest to blur image
         val blurBuilder = OneTimeWorkRequestBuilder<BlurWorker>()
 
         // input data object
         blurBuilder.setInputData(createInputDataForWorkRequest(blurLevel, imageUri))
 
-        // Start work
-        workManager.enqueue(blurBuilder.build())
+        // Start single work request
+        // workManager.enqueue(blurBuilder.build())
+
+        // to add blur work request to chain
+        continuation = continuation.then(blurBuilder.build())
+
+        // WorkRequest to save image to filesystem
+        val save = OneTimeWorkRequestBuilder<SaveImageToFileWorker>()
+            .build()
+        continuation = continuation.then(save)
+
+        // Start work chain
+        continuation.enqueue()
+
     }
 
     /**
