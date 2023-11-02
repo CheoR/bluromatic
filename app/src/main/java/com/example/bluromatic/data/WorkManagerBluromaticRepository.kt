@@ -11,6 +11,7 @@ import androidx.work.WorkManager
 import com.example.bluromatic.IMAGE_MANIPULATION_WORK_NAME
 import com.example.bluromatic.KEY_BLUR_LEVEL
 import com.example.bluromatic.KEY_IMAGE_URI
+import com.example.bluromatic.TAG_OUTPUT
 import com.example.bluromatic.getImageUri
 import com.example.bluromatic.workers.BlurWorker
 import kotlinx.coroutines.flow.Flow
@@ -68,6 +69,7 @@ class WorkManagerBluromaticRepository(context: Context) : BluromaticRepository {
 
         // WorkRequest to save image to filesystem
         val save = OneTimeWorkRequestBuilder<SaveImageToFileWorker>()
+            .addTag(TAG_OUTPUT)
             .build()
         continuation = continuation.then(save)
 
