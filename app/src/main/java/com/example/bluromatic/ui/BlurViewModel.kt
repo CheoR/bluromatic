@@ -2,13 +2,17 @@ package com.example.bluromatic.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.work.WorkInfo
 import com.example.bluromatic.BluromaticApplication
 import com.example.bluromatic.data.BlurAmountData
 import com.example.bluromatic.data.BluromaticRepository
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 /**
  * [BlurViewModel] starts and stops WorkManger and applies image blur. Also updates
@@ -18,7 +22,25 @@ class BlurViewModel(private val bluromaticRepository: BluromaticRepository) : Vi
 
     internal val blurAmount = BlurAmountData.blurAmount
 
-    val blurUiState: StateFlow<BlurUiState> = MutableStateFlow(BlurUiState.Default)
+    // val blurUiState: StateFlow<BlurUiState> = MutableStateFlow(BlurUiState.Default)
+    val blurUiState: StateFlow<BlurUiState> = bluromaticRepository
+        .outputWorkInfo
+        .map { info ->
+            when {
+                info.state.isFinished -> {
+                    BlurUiState.Complete(outputUri = "")
+                }
+                info.state == WorkInfo.State.CANCELLED -> {
+                    BlurUiState.Default
+                }
+                else -> BlurUiState.Loading
+            }
+        }.stateIn( // cold flow to hot stateflow
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = BlurUiState.Default
+        )
+
 
     /**
      * Call method from repository to create WorkRequest to apply blur
