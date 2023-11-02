@@ -2,6 +2,7 @@ package com.example.bluromatic.data
 
 import android.content.Context
 import android.net.Uri
+import androidx.lifecycle.asFlow
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
@@ -15,17 +16,20 @@ import com.example.bluromatic.TAG_OUTPUT
 import com.example.bluromatic.getImageUri
 import com.example.bluromatic.workers.BlurWorker
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-
-
 import com.example.bluromatic.workers.CleanupWorker
 import com.example.bluromatic.workers.SaveImageToFileWorker
+import kotlinx.coroutines.flow.mapNotNull
 
 class WorkManagerBluromaticRepository(context: Context) : BluromaticRepository {
 
-    override val outputWorkInfo: Flow<WorkInfo?> = MutableStateFlow(null)
     private var imageUri: Uri = context.getImageUri()
     private val workManager = WorkManager.getInstance(context)
+    override val outputWorkInfo: Flow<WorkInfo> = workManager
+        .getWorkInfosByTagLiveData(TAG_OUTPUT)
+        .asFlow()
+        .mapNotNull {
+            if (it.isNotEmpty()) it.first() else null
+        }
 
     /**
      * Create WorkRequests to apply blur and save resulting image
