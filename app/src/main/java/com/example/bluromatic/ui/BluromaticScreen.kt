@@ -58,7 +58,7 @@ fun BluromaticScreen(blurViewModel: BlurViewModel = viewModel(factory = BlurView
                 blurUiState = uiState,
                 blurAmountOptions = blurViewModel.blurAmount,
                 applyBlur = blurViewModel::applyBlur,
-                cancelWork = {}
+                cancelWork = blurViewModel::cancelWork
             )
         }
     }
